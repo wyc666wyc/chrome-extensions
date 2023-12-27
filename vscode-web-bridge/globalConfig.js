@@ -1,0 +1,5 @@
+export const CRX_OUTDIR = 'dist'
+export const CRX_CONTENT_OUTDIR = '_dist_content'
+export const CRX_BACKGROUND_OUTDIR = '_dist_background'
+export const CRX_PAGE_OUTDIR = '_dist_page'
+export const CONTENT_ROOT_ID = 'vscode-web-bridge-container'

@@ -1,0 +1,27 @@
+{
+  "name": "vscode-bridge",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/build.js",
+    "build-content": "vue-tsc && vite build -c config/vite.content.config.ts",
+    "build-background": "vue-tsc && vite build -c config/vite.background.config.ts",
+    "build-all": "vue-tsc && vite build -c config/vite.popup.config.ts && vite build -c config/vite.content.config.ts && vite build -c config/vite.background.config.ts && node scripts/build.js",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "sass": "^1.69.5",
+    "vue": "^3.3.11",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "@types/node": "^20.10.5",
+    "@vitejs/plugin-vue": "^4.5.2",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vue-tsc": "^1.8.25"
+  }
+}

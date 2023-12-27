@@ -1,0 +1,50 @@
+{
+   "action": {
+      "default_popup": "index.html",
+      "default_icon": {
+         "16": "images/vscode.png",
+         "24": "images/vscode.png",
+         "32": "images/vscode.png"
+      },
+      "default_title": "vscode-web-bridge"
+   },
+   "background": {
+      "service_worker": "background.js"
+   },
+   "content_scripts": [
+      {
+         "matches": [
+            "<all_urls>"
+         ],
+         "js": [
+            "content.js"
+         ],
+         "css": [
+            "content.css"
+         ],
+         "run_at": "document_end"
+      }
+   ],
+   "default_locale": "en",
+   "description": "connect vscode & other editor",
+   "host_permissions": [
+      "<all_urls>"
+   ],
+   "icons": {
+      "128": "images/vscode.png",
+      "16": "images/vscode.png",
+      "48": "images/vscode.png"
+   },
+   "manifest_version": 3,
+   "minimum_chrome_version": "102.0.0.0",
+   "name": "vscode-web-bridge",
+   "offline_enabled": true,
+   "permissions": [
+      "tabs",
+      "webNavigation",
+      "storage",
+      "scripting"
+   ],
+   "short_name": "vscode-web-bridge",
+   "version": "0.0.1"
+}
