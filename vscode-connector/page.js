@@ -381,11 +381,11 @@
 		}
 		let M, x
 		const S = (options) => {
-			const { 
-				name, 
-				writeable = true, 
-				eventEmitter, 
-				entries 
+			const {
+				name,
+				writeable = true,
+				eventEmitter,
+				entries
 			} = options
 			M = new T(name, writeable)
 			if (entries) {
@@ -1201,26 +1201,26 @@
 				t.Worker = new Proxy(Worker, {
 					construct: (e, [t, r]) => {
 						console.log('Worker', e, t, r)
-						const i = new Worker(t, r)
+						const workerInstance = new Worker(t, r)
 						let s
-						return new Proxy(i, {
+						return new Proxy(workerInstance, {
 							get: (e, t) =>
 								"postMessage" === t
 									? (e) => {
-										const { method: t } = e
-										if ("listDirectory" !== t && "searchDirectory" !== t) {
+										const { method } = e
+										if ("listDirectory" !== method && "searchDirectory" !== method) {
 											console.log('searchDirectory', e)
-											i.postMessage(e)
+											workerInstance.postMessage(e)
 										}
 										else {
-											const { vsWorker: t, req: n, method: r } = e
+											const { vsWorker, req, method } = e
 											setTimeout(() => {
 												s &&
 													s({
 														data: {
-															vsWorker: t,
-															seq: n,
-															method: r,
+															vsWorker,
+															seq: req,
+															method,
 															type: 1,
 															res: { results: [], limitHit: 0 },
 														},
@@ -1237,15 +1237,15 @@
 											? (e, t) =>
 												"message" === e
 													? ((s = t),
-														i.addEventListener(e, (e) => {
+														workerInstance.addEventListener(e, (e) => {
 															s && s(e)
 														}))
-													: i.addEventListener(e, t)
-											: i[t].bind(i)
+													: workerInstance.addEventListener(e, t)
+											: workerInstance[t].bind(workerInstance)
 										: Reflect.get(e, t),
 							set: (e, t, n) =>
 								"onmessage" === t && "function" == typeof n
-									? ((s = n), (i.onmessage = (e) => s && s(e)))
+									? ((s = n), (workerInstance.onmessage = (e) => s && s(e)))
 									: Reflect.set(e, t, n),
 						})
 					}
