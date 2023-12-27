@@ -1204,8 +1204,8 @@
 						const workerInstance = new Worker(t, r)
 						let s
 						return new Proxy(workerInstance, {
-							get: (e, t) =>
-								"postMessage" === t
+							get: (e, type) =>
+								"postMessage" === type
 									? (e) => {
 										const { method } = e
 										if ("listDirectory" !== method && "searchDirectory" !== method) {
@@ -1232,16 +1232,16 @@
 										"addEventListener",
 										"removeEventListener",
 										"terminate",
-									].includes(t)
-										? "addEventListener" === t
-											? (e, t) =>
+									].includes(type)
+										? "addEventListener" === type
+											? (e, callback) =>
 												"message" === e
-													? ((s = t),
+													? ((s = callback),
 														workerInstance.addEventListener(e, (e) => {
 															s && s(e)
 														}))
-													: workerInstance.addEventListener(e, t)
-											: workerInstance[t].bind(workerInstance)
+													: workerInstance.addEventListener(e, callback)
+											: workerInstance[type].bind(workerInstance)
 										: Reflect.get(e, t),
 							set: (e, t, n) =>
 								"onmessage" === t && "function" == typeof n
