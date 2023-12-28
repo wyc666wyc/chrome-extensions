@@ -1,5 +1,13 @@
 ; (() => {
     "use strict"
+    const {
+        storage,
+        runtime,
+        action,
+        tabs,
+        webNavigation,
+        scripting,
+    } = chrome
     let e
     Object.fromEntries
         ? (e = Object.fromEntries)
@@ -70,7 +78,6 @@
             }
         )
     })()
-    const { storage: R, runtime: z } = chrome
     const U = async function (e, t) {
         const a = F[e][t]
         a && (await a())
@@ -87,7 +94,7 @@
                     t[o] = n
                     const s = {}
                         ; (s[o] = { origin: a, value: n }),
-                            await new Promise((e) => R.local.set(s, () => e()))
+                            await new Promise((e) => storage.local.set(s, () => e()))
                 },
                 setValues: async (e) => {
                     const n = {}
@@ -96,7 +103,7 @@
                             r = e[o]
                             ; (t[s] = r), (n[s] = { origin: a, value: r })
                     }),
-                        await new Promise((e) => R.local.set(n, () => e()))
+                        await new Promise((e) => storage.local.set(n, () => e()))
                 },
                 getValue: (e, a) => {
                     const n = e
@@ -113,7 +120,7 @@
                     })(n, T.keys)
                         ; (t = e),
                             await new Promise((t) => {
-                                R.local.clear(async () => {
+                                storage.local.clear(async () => {
                                     await (async (e, t) => {
                                         await Promise.all(
                                             Object.getOwnPropertyNames(t).map(async (a) => {
@@ -128,7 +135,7 @@
                 deleteValue: async (e) => {
                     const a = e
                     delete t[a],
-                        await new Promise((e) => R.local.remove(a, () => e()))
+                        await new Promise((e) => storage.local.remove(a, () => e()))
                 },
                 listValues: () => {
                     const e = []
@@ -170,11 +177,11 @@
                         const u = () => {
                             o.log("Storage: test -> start")
                             const t = Date.now()
-                            R.local.set(r, () => {
+                            storage.local.set(r, () => {
                                 o.log(
                                     "Storage: test -> set after " + (Date.now() - t) + "ms"
                                 ),
-                                    R.local.get(
+                                    storage.local.get(
                                         s,
                                         (a) => (
                                             o.log(
@@ -190,12 +197,12 @@
                                                         " != " +
                                                         JSON.stringify(n)
                                                     )
-                                                    : z.lastError
+                                                    : runtime.lastError
                                                         ? l(
-                                                            (z.lastError && z.lastError.message) ||
+                                                            (runtime.lastError && runtime.lastError.message) ||
                                                             "lastError is set"
                                                         )
-                                                        : void R.local.remove(s, () => {
+                                                        : void storage.local.remove(s, () => {
                                                             o.log(
                                                                 "Storage: test -> remove after " +
                                                                 (Date.now() - t) +
@@ -228,7 +235,7 @@
                                 })
                         }
                         await new Promise((e) =>
-                            R.local.get(null, (t) => {
+                            storage.local.get(null, (t) => {
                                 a(t), e()
                             })
                         )
@@ -254,7 +261,7 @@
                     }
                 }, 1e3)
             })
-    const H = {
+    const storageFactory = {
         secure: {},
         setValue: (e, t) => q.setValue(e, t),
         setValues: (e) => q.setValues(e),
@@ -288,17 +295,16 @@
             const e = F[C]
                 ; (q = e.methods), e.init && (await e.init())
         },
-        factoryReset: () => H.deleteAll(),
+        factoryReset: () => storageFactory.deleteAll(),
         isWiped: async () => !1,
         setVersion: async (e, t) => {
-            await H.setValue(D, e), t && (await H.setValue(x, t))
+            await storageFactory.setValue(D, e), t && (await storageFactory.setValue(x, t))
         },
-        getVersion: async (e) => (await H.getValue(D)) || e,
-        getSchemaVersion: () => H.getValue(x, "1.0"),
+        getVersion: async (e) => (await storageFactory.getValue(D)) || e,
+        getSchemaVersion: () => storageFactory.getValue(x, "1.0"),
     }
-    const X = H
-    const B = chrome.runtime.id.substr(0, 4)
-    const G = [
+    const runtimeId = chrome.runtime.id.substr(0, 4)
+    const externalExtensionIds = [
         "dhdgffkkebhmkfjojejmpbldmpobfkfo",
         "gcalenpjmijncebpfijmoaglllgpjagf",
         "iikmkjmpaadaobahmlepeloendndfphd",
@@ -308,26 +314,26 @@
     const K = []
     const Y = {}
     const Z = {}
-    const _ = {
+    const config = {
         configMode: 0,
-        logLevel: "hohm" === B ? 100 : 0,
-        externalExtensionIds: [...G],
+        logLevel: "hohm" === runtimeId ? 100 : 0,
+        externalExtensionIds: [...externalExtensionIds],
     }
     const ee = {}
-    const te = (e) => {
+    const getValueFn = (e) => {
         let t,
-            a = X.getValue(J, {})
+            a = storageFactory.getValue(J, {})
         return (
             a instanceof Object || (a = {}),
-            void 0 !== (t = a[e]) ? t : "function" == typeof (t = _[e]) ? t() : t
+            void 0 !== (t = a[e]) ? t : "function" == typeof (t = config[e]) ? t() : t
         )
     }
     const ae = (e, t) => {
-        let a = X.getValue(J, {})
+        let a = storageFactory.getValue(J, {})
         a instanceof Object || (a = {})
-        const n = te(e)
+        const n = getValueFn(e)
         a[e] = t
-        const s = X.setValue(J, a),
+        const s = storageFactory.setValue(J, a),
             r = Z[e]
         return (
             r &&
@@ -390,10 +396,10 @@
                 },
                 enumerable: !0,
             }),
-                Object.keys(_).forEach((t) => {
+                Object.keys(config).forEach((t) => {
                     Object.defineProperty(e, t, {
                         get: function () {
-                            return te(t)
+                            return getValueFn(t)
                         },
                         set: function (e) {
                             ae(t, e)
@@ -415,10 +421,10 @@
                 (re.values = e),
                 (re.initialized = !0)
         },
-        getValue: (e) => (ee.hasOwnProperty(e) ? oe(e) : te(e)),
+        getValue: (e) => (ee.hasOwnProperty(e) ? oe(e) : getValueFn(e)),
         setValue: async (e, t) =>
             ee.hasOwnProperty(e) ? await se(e, t) : await ae(e, t),
-        getDefaults: () => _,
+        getDefaults: () => config,
         addChangeListener: (e, t) => {
             var a
                 ; ((a = e), Array.isArray(a) ? a : [a]).forEach((e) => {
@@ -427,109 +433,110 @@
                 })
         },
     }
-    const le = "https://vscode.dev/?connectTo=tc"
-    const {
-        runtime,
-        action,
-        tabs,
-        webNavigation,
-        scripting,
-    } = chrome
-        ; (async (e) => {
-            ; (e.oninstall = () => e.skipWaiting()),
-                webNavigation.onCommitted.addListener((e) => {
-                    console.log(e)
-                    const { url: t, tabId: a } = e
-                    t.startsWith(le) &&
-                        (scripting.executeScript({
-                            files: ["content.js"],
-                            target: { tabId: a, frameIds: [0] },
-                            injectImmediately: !0,
-                            world: "ISOLATED",
-                        }),
-                            scripting.executeScript({
-                                files: ["page.js"],
-                                target: { tabId: a, frameIds: [0] },
-                                injectImmediately: !0,
-                                world: "MAIN",
-                            }))
-                })
-            const t = async (e, n) => {
-                if (a) return await a, t(e, n)
-                {
-                    let t = () => null
-                        ; (a = new Promise((e) => (t = e))), a.then(() => (a = void 0))
-                    const s = await (async (e) => {
-                        const t =
-                            K.length && K.includes(B) ? re.values.externalExtensionIds : G
-                        return (
-                            await Promise.all(
-                                t.map((t) => {
-                                    if (void 0 === Y[t])
-                                        return (
-                                            (Y[t] = !1),
-                                            new Promise((a) => {
-                                                try {
-                                                    const n = runtime.connect(t),
-                                                        o = Math.random().toString(36).substr(2, 5)
-                                                    n.postMessage({
-                                                        method: "userscripts",
-                                                        action: "options",
-                                                        messageId: o,
-                                                        activeUrls: e,
+    const editorUrl = "https://vscode.dev/?connectTo=tc";
+    (async (e) => {
+        (e.oninstall = () => e.skipWaiting())
+        webNavigation.onCommitted.addListener((e) => {
+            console.log(e)
+            const { url, tabId: a } = e
+            // if (url.startsWith(editorUrl)) {
+            //     return
+            // }
+            scripting.executeScript({
+                files: ["content.js"],
+                target: { tabId: a, frameIds: [0] },
+                injectImmediately: !0,
+                world: "ISOLATED",
+            })
+            scripting.executeScript({
+                files: ["page.js"],
+                target: { tabId: a, frameIds: [0] },
+                injectImmediately: !0,
+                world: "MAIN",
+            })
+        })
+        const t = async (e, n) => {
+            if (a) return await a, t(e, n)
+            {
+                let t = () => null
+                a = new Promise((e) => (t = e))
+                a.then(() => (a = void 0))
+                const s = await (async (e) => {
+                    const t =
+                        K.length && K.includes(runtimeId) ? re.values.externalExtensionIds : externalExtensionIds
+                    return (
+                        await Promise.all(
+                            t.map((t) => {
+                                if (void 0 === Y[t])
+                                    return (
+                                        (Y[t] = !1),
+                                        new Promise((a) => {
+                                            try {
+                                                const n = runtime.connect(t),
+                                                    o = Math.random().toString(36).substr(2, 5)
+                                                n.postMessage({
+                                                    method: "userscripts",
+                                                    action: "options",
+                                                    messageId: o,
+                                                    activeUrls: e,
+                                                }),
+                                                    n.onMessage.addListener((e) => {
+                                                        runtime.lastError,
+                                                            e || (delete Y[t], n.disconnect()),
+                                                            e &&
+                                                            e.messageId === o &&
+                                                            e.allow &&
+                                                            e.allow.includes("list") &&
+                                                            (Y[t] = n),
+                                                            a()
                                                     }),
-                                                        n.onMessage.addListener((e) => {
-                                                            runtime.lastError,
-                                                                e || (delete Y[t], n.disconnect()),
-                                                                e &&
-                                                                e.messageId === o &&
-                                                                e.allow &&
-                                                                e.allow.includes("list") &&
-                                                                (Y[t] = n),
-                                                                a()
-                                                        }),
-                                                        n.onDisconnect.addListener(() => {
-                                                            runtime.lastError, delete Y[t], a()
-                                                        })
-                                                } catch (e) {
-                                                    o.debug(`unable to talk to ${t}`, e), a()
-                                                }
-                                            })
-                                        )
-                                })
-                            ),
-                            Object.keys(Y)
-                                .filter((e) => !1 !== Y[e])
-                                .map((e) => ({ id: e, port: Y[e] }))
-                        )
-                    })([le])
-                    if (!s.length) return n({ error: "no extension to talk to" }), void t()
-                    const [{ id: r, port: i }] = s
-                    o.log(`Found extension ${r}`)
-                    const l = (e) => {
-                        n(e), i.onMessage.removeListener(l), t()
-                    }
-                    i.onMessage.addListener(l),
-                        i.postMessage({
-                            method: e.method,
-                            ...e.args,
-                        }),
-                        await a,
-                        (a = void 0)
+                                                    n.onDisconnect.addListener(() => {
+                                                        runtime.lastError, delete Y[t], a()
+                                                    })
+                                            } catch (e) {
+                                                o.debug(`unable to talk to ${t}`, e), a()
+                                            }
+                                        })
+                                    )
+                            })
+                        ),
+                        Object.keys(Y)
+                            .filter((e) => !1 !== Y[e])
+                            .map((e) => ({ id: e, port: Y[e] }))
+                    )
+                })([editorUrl])
+                if (!s.length) return n({ error: "no extension to talk to" }), void t()
+                const [{ id: r, port: i }] = s
+                o.log(`Found extension ${r}`)
+                const l = (e) => {
+                    n(e), i.onMessage.removeListener(l), t()
                 }
+                i.onMessage.addListener(l),
+                    i.postMessage({
+                        method: e.method,
+                        ...e.args,
+                    }),
+                    await a,
+                    (a = void 0)
             }
-            runtime.onMessage.addListener((e, a, n) => (t(e, n), !0)),
-                action.onClicked.addListener(() => {
-                    runtime.lastError,
-                        tabs.query({ url: le + "*" }, (e) => {
-                            e && e.length && e[0].id
-                                ? tabs.update(e[0].id, { active: !0 }, () => runtime.lastError)
-                                : tabs.create({ url: le, active: !0 }, () => runtime.lastError)
-                        })
+        }
+        runtime.onMessage.addListener((e, a, n) => (t(e, n), !0))
+        action.onClicked.addListener(() => {
+            console.log('action.onClicked')
+            runtime.lastError,
+                tabs.query({ url: editorUrl + "*" }, (e) => {
+                    e && e.length && e[0].id
+                        ? tabs.update(e[0].id, { active: !0 }, () => runtime.lastError)
+                        : tabs.create({ url: editorUrl, active: !0 }, () => runtime.lastError)
                 })
-            let a = (async () => {
-                await X.init(), await re.init(), o.set(re.values.logLevel)
-            })()
-            await a, (a = void 0), o.log("Tampermonkey Editors initialization done")
-        })(self)
+        })
+        let a = (async () => {
+            await storageFactory.init()
+            await re.init()
+            o.set(re.values.logLevel)
+        })()
+        await a
+        a = void 0
+        o.log("Tampermonkey Editors initialization done")
+    })(self)
 })()

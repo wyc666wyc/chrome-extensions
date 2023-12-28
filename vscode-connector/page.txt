@@ -126,7 +126,6 @@
 
 		class FileSystemFileHandle extends FileSystemHandle {
 			constructor(e) {
-				debugger
 				super(e)
 				this.kind = "file"
 				this[s] = e
@@ -1093,7 +1092,7 @@
 					r()
 				}))(i_obj)
 			const namespaceInstance = new NameSpace("unused", false)
-			!(async function (fff, list, handler) {
+			!(async function (fff, list, n) {
 				for (const {
 					path,
 					name,
@@ -1122,13 +1121,14 @@
 										: rest && rest.length
 											? slashReplacer(decodeURIComponent(rest.join("/")))
 											: "<name missing>"
-							const file = new FileGSAsync(fileName, path, handler)
+							const file = new FileGSAsync(fileName, path, n)
 							c._entries[fileName] = new FileWriterImpl(fileName, file, true)
 						})
 				new FileSystemDirectoryHandle(fff)
 			})(namespaceInstance, sendUserscripts, {
 				get: async (e, t, timeStamp) =>
 					await me(async () => {
+						debugger
 						const { value, lastModified } = await ((e, t, timeStamp) =>
 							new Promise((resolve, reject) => {
 								const timer = setTimeout(() => reject(new DOMException(TIMED_OUT_ERROR)), 15e3)
@@ -1199,6 +1199,7 @@
 						get: (target, type) =>
 							type === "postMessage"
 								? (param) => {
+									debugger
 									const { method } = param
 									if ("listDirectory" !== method && "searchDirectory" !== method) {
 										console.log('searchDirectory', param)

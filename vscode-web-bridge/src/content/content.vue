@@ -14,7 +14,8 @@
 	</div>
 </template>
 <script setup lang="ts">
-import { computed, reactive } from "vue"
+import { computed, onMounted, onUnmounted, reactive } from "vue"
+import { listener } from './channel'
 
 const ballStatus = reactive({
 	startClientX: 0,
@@ -49,6 +50,13 @@ const handleDragend = (e: any) => {
 	ballStatus.right += x
 	ballStatus.bottom += y
 }
+
+onMounted(() => {
+	listener.start()
+})
+onUnmounted(() => {
+	listener.remove()
+})
 </script>
 <style lang="scss">
 .ball {

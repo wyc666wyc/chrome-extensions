@@ -12,7 +12,14 @@
    },
    "default_locale": "en",
    "description": "connect vscode & other editor",
-   "host_permissions": [ "https://*.vscode.dev/*" ],
+   "host_permissions": [
+      "https://*.vscode.dev/*",
+      "http://127.0.0.1:5173/*",
+      "http://tcwireless.t.17usoft.com/*",
+      "http://tcwireless.17usoft.com/*",
+      "https://tcwireless.t.17usoft.com/*",
+      "https://tcwireless.17usoft.com/*"
+   ],
    "icons": {
       "128": "images/vscode.png",
       "16": "images/vscode.png",
@@ -23,7 +30,12 @@
    "minimum_chrome_version": "102.0.0.0",
    "name": "vscode-connector",
    "offline_enabled": true,
-   "permissions": [ "tabs", "webNavigation", "storage", "scripting" ],
+   "permissions": [
+      "tabs",
+      "webNavigation",
+      "storage",
+      "scripting"
+   ],
    "short_name": "vscode-connector",
    "update_url": "https://clients2.google.com/service/update2/crx",
    "version": "0.0.1"
