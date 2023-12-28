@@ -7,33 +7,34 @@ webNavigation.onCompleted.addListener(
 	(e: chrome.webNavigation.WebNavigationFramedCallbackDetails) => {
 		const { url, tabId } = e
 		console.log(url, tabId)
-		if (isInWhiteList(url)) {
-			scripting.executeScript({
-				files: ["page.js"],
-				target: {
-					tabId,
-					frameIds: [0],
-				},
-				injectImmediately: true,
-				world: "MAIN",
-			})
-			scripting.executeScript({
-				files: ["content.js"],
-				target: {
-					tabId,
-					frameIds: [0],
-				},
-				injectImmediately: true,
-				world: "ISOLATED",
-			})
-			scripting.insertCSS({
-				files: ["content.css"],
-				target: {
-					tabId,
-					frameIds: [0],
-				}
-			})
-		}
+		// if (isInWhiteList(url)) {
+		// 	return
+		// }
+		scripting.executeScript({
+			files: ["page.js"],
+			target: {
+				tabId,
+				frameIds: [0],
+			},
+			injectImmediately: true,
+			world: "MAIN",
+		})
+		scripting.executeScript({
+			files: ["content.js"],
+			target: {
+				tabId,
+				frameIds: [0],
+			},
+			injectImmediately: true,
+			world: "ISOLATED",
+		})
+		scripting.insertCSS({
+			files: ["content.css"],
+			target: {
+				tabId,
+				frameIds: [0],
+			}
+		})
 	}
 )
 

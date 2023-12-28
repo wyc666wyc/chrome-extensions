@@ -1082,12 +1082,13 @@
 					)
 				return instance
 			}
+			/// 发送读取脚本消息通知, 获取所有脚本列表
 			const sendUserscripts = await ((e) =>
-				new Promise((t) => {
+				new Promise((reslove) => {
 					let n = 1
 					const r = () => {
-						e.send("userscripts", { action: "list" }, (e) => {
-							!e || errorFn(e) ? setTimeout(r, Math.min((n *= 2), 5e3)) : t(e.list)
+						e.send("userscripts", { action: "list" }, (event) => {
+							!event || errorFn(event) ? setTimeout(r, Math.min((n *= 2), 5e3)) : reslove(event.list)
 						})
 					}
 					r()

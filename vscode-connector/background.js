@@ -433,11 +433,10 @@
                 })
         },
     }
-    const editorUrl = "https://vscode.dev/?connectTo=tc";
+    const editorUrl = "https://vscode.dev/?connectTo=";
     (async (e) => {
         (e.oninstall = () => e.skipWaiting())
         webNavigation.onCommitted.addListener((e) => {
-            console.log(e)
             const { url, tabId: a } = e
             // if (url.startsWith(editorUrl)) {
             //     return
@@ -461,40 +460,40 @@
                 let t = () => null
                 a = new Promise((e) => (t = e))
                 a.then(() => (a = void 0))
-                const s = await (async (e) => {
-                    const t =
+                const s = await (async (activeUrls) => {
+                    const list =
                         K.length && K.includes(runtimeId) ? re.values.externalExtensionIds : externalExtensionIds
                     return (
                         await Promise.all(
-                            t.map((t) => {
-                                if (void 0 === Y[t])
+                            list.map((key) => {
+                                if (void 0 === Y[key])
                                     return (
-                                        (Y[t] = !1),
+                                        (Y[key] = !1),
                                         new Promise((a) => {
                                             try {
-                                                const n = runtime.connect(t),
-                                                    o = Math.random().toString(36).substr(2, 5)
+                                                const n = runtime.connect(key)
+                                                const o = Math.random().toString(36).substr(2, 5)
                                                 n.postMessage({
                                                     method: "userscripts",
                                                     action: "options",
                                                     messageId: o,
-                                                    activeUrls: e,
-                                                }),
-                                                    n.onMessage.addListener((e) => {
-                                                        runtime.lastError,
-                                                            e || (delete Y[t], n.disconnect()),
-                                                            e &&
-                                                            e.messageId === o &&
-                                                            e.allow &&
-                                                            e.allow.includes("list") &&
-                                                            (Y[t] = n),
-                                                            a()
-                                                    }),
-                                                    n.onDisconnect.addListener(() => {
-                                                        runtime.lastError, delete Y[t], a()
-                                                    })
+                                                    activeUrls,
+                                                })
+                                                n.onMessage.addListener((e) => {
+                                                    runtime.lastError,
+                                                        e || (delete Y[key], n.disconnect()),
+                                                        e &&
+                                                        e.messageId === o &&
+                                                        e.allow &&
+                                                        e.allow.includes("list") &&
+                                                        (Y[key] = n),
+                                                        a()
+                                                })
+                                                n.onDisconnect.addListener(() => {
+                                                    runtime.lastError, delete Y[key], a()
+                                                })
                                             } catch (e) {
-                                                o.debug(`unable to talk to ${t}`, e), a()
+                                                o.debug(`unable to talk to ${key}`, e), a()
                                             }
                                         })
                                     )

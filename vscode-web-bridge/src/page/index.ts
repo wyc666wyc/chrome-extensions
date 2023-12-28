@@ -1,9 +1,16 @@
-import { FileGS } from './file'
+import { FileGS } from "./file"
 
-const a = () => {
-    console.log('a')
-    setInterval(() => {
-        window.postMessage({a: 1}, '*')
-    }, 30000)
-}
-a()
+const monacoInstance = (window as any).alleMonacoEditor
+
+window.addEventListener("message", (event) => {
+	const { data } = event
+	if (data.type === "getContent") {
+		window.postMessage(
+			{
+				type: "setContent",
+				content: monacoInstance.getValue(),
+			},
+			"*"
+		)
+	}
+})

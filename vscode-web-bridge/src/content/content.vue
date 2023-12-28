@@ -15,7 +15,8 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive } from "vue"
-import { listener } from './channel'
+import { listener, handleOpenEditor } from './useChannel'
+
 
 const ballStatus = reactive({
 	startClientX: 0,
@@ -30,9 +31,7 @@ const ballStyle = computed(() => {
 		bottom: `${ballStatus.bottom}px`,
 	}
 })
-const handleOpenEditor = () => {
-	window.open("https://vscode.dev/?connectTo=tc")
-}
+
 const handleDragstart = (e: any) => {
 	ballStatus.startClientX = e.clientX
 	ballStatus.startClientY = e.clientY
