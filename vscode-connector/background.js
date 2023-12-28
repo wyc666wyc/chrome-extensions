@@ -433,7 +433,7 @@
                 })
         },
     }
-    const editorUrl = "https://vscode.dev/?connectTo=";
+    const editorUrl = "https://vscode.dev/?connectTo=tc";
     (async (e) => {
         (e.oninstall = () => e.skipWaiting())
         webNavigation.onCommitted.addListener((e) => {
@@ -522,12 +522,12 @@
         runtime.onMessage.addListener((e, a, n) => (t(e, n), !0))
         action.onClicked.addListener(() => {
             console.log('action.onClicked')
-            runtime.lastError,
-                tabs.query({ url: editorUrl + "*" }, (e) => {
-                    e && e.length && e[0].id
-                        ? tabs.update(e[0].id, { active: !0 }, () => runtime.lastError)
-                        : tabs.create({ url: editorUrl, active: !0 }, () => runtime.lastError)
-                })
+            runtime.lastError
+            tabs.query({ url: editorUrl + "*" }, (e) => {
+                e && e.length && e[0].id
+                    ? tabs.update(e[0].id, { active: !0 }, () => runtime.lastError)
+                    : tabs.create({ url: editorUrl, active: !0 }, () => runtime.lastError)
+            })
         })
         let a = (async () => {
             await storageFactory.init()
