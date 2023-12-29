@@ -126,7 +126,6 @@
 
 		class FileSystemFileHandle extends FileSystemHandle {
 			constructor(e) {
-				debugger
 				super(e)
 				this.kind = "file"
 				this[s] = e
@@ -895,7 +894,7 @@
 		(async (self) => {
 			const Worker = self.Worker
 			let instance
-			const i_obj = (({ sendPrefix, listenPrefix, cloneInto }) => {
+			const channel = (({ sendPrefix, listenPrefix, cloneInto }) => {
 				let r,
 					i,
 					s,
@@ -1070,7 +1069,7 @@
 				sendPrefix: "2C",
 				listenPrefix: "2P",
 			})
-			i_obj.init("bfaqq")
+			channel.init("bfaqq")
 			self.showOpenFilePicker = async () => []
 			self.showDirectoryPicker = async () => {
 				let e = 0
@@ -1093,7 +1092,7 @@
 					}
 					r()
 				})
-			const userscripts = await getUserScripts(i_obj)
+			const userscripts = await getUserScripts(channel)
 			const namespaceInstance = new NameSpace("unused", false)
 			!(async function (fff, list, handler) {
 				for (const {
@@ -1116,14 +1115,15 @@
 								),
 								fff
 							)
-							const fileName =
-								flag === "source"
-									? "script.user.js"
-									: flag === "storage"
-										? "storage.json"
-										: rest && rest.length
-											? slashReplacer(decodeURIComponent(rest.join("/")))
-											: "<name missing>"
+							const fileName = "index.js"
+							// const fileName =
+							// 	flag === "source"
+							// 		? "script.user.js"
+							// 		: flag === "storage"
+							// 			? "storage.json"
+							// 			: rest && rest.length
+							// 				? slashReplacer(decodeURIComponent(rest.join("/")))
+							// 				: "<name missing>"
 							const file = new FileGSAsync(fileName, path, handler)
 							c._entries[fileName] = new FileWriterImpl(fileName, file, true)
 						})
@@ -1147,7 +1147,7 @@
 										}
 									}
 								)
-							}))(i_obj, t, timeStamp)
+							}))(channel, t, timeStamp)
 						console.log('File value', value)
 						return new File([value || ""], e, { lastModified })
 					}
@@ -1157,7 +1157,6 @@
 						await ((e, t, n, r) =>
 							new Promise((resolve, reject) => {
 								const o = setTimeout(() => reject(new DOMException(TIMED_OUT_ERROR)), 15e3)
-								debugger
 								e.send(
 									"userscripts",
 									{ action: "patch", path: t, value: n, lastModified: r },
@@ -1165,7 +1164,7 @@
 										clearTimeout(o), !e || e.error ? reject(e?.error) : resolve()
 									}
 								)
-							}))(i_obj, t, await n.text(), n.lastModified)
+							}))(channel, t, await n.text(), n.lastModified)
 					}),
 			})
 			const eventEmitter = new EventEmitter()
@@ -1256,6 +1255,22 @@
 					} else {
 						t.click()
 						console.log("vscode-connector FileSystem automatically opened")
+						clearInterval(e)
+					}
+				}, 500)
+			})
+			processor(() => {
+				let dom
+				const e = setInterval(() => {
+					dom = document.querySelector('iframe[id^="mc-monaco-editor"]')
+					if (dom) {
+						const monaco = dom.contentWindow.alleMonacoEditor
+						const content = monaco.getValue()
+						channel.send('userscripts', {
+							action: "set",
+							value: content,
+							lastModified: Date.now(),
+						})
 						clearInterval(e)
 					}
 				}, 500)

@@ -2,7 +2,7 @@
 	; (() => {
 		"use strict"
 		const e = !window.content_world
-		const { createEvent: n } = document
+		const { createEvent } = document
 		const { runtime } = chrome
 			; (async () => {
 				const o = (({ sendPrefix: t, listenPrefix: o, cloneInto: s }) => {
@@ -24,7 +24,7 @@
 								var r
 								return (
 									o
-										? ((i = n("MutationEvent")),
+										? ((i = createEvent("MutationEvent")),
 											i.initMutationEvent(
 												e,
 												!1,

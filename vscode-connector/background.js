@@ -1,5 +1,6 @@
 ; (() => {
     "use strict"
+    let tempText = null
     const {
         storage,
         runtime,
@@ -13,33 +14,33 @@
         ? (e = Object.fromEntries)
         : ((e = (e) => [...e].reduce((e, [t, a]) => ((e[t] = a), e), {})),
             (Object.fromEntries = e))
-    let t = 0
-    const a = []
-    const n = () => {
+    let tCount = 0
+    const changeListener = []
+    const bindConsole = () => {
         const e = ["debug"],
             a = ["log"],
             n = ["warn", "info"],
             s = ["error"],
             r = [...e, ...a, ...n, ...s],
             i = s
-        t >= 80 && i.push(...e),
-            t >= 60 && i.push(...a),
-            t >= 30 && i.push(...n),
+        tCount >= 80 && i.push(...e),
+            tCount >= 60 && i.push(...a),
+            tCount >= 30 && i.push(...n),
             r.forEach(
-                (e) => (o[e] = i.includes(e) ? console[e].bind(console) : () => { })
+                (e) => (verbose[e] = i.includes(e) ? console[e].bind(console) : () => { })
             )
     }
-    const o = {
+    const verbose = {
         set: (e) => {
-            ; (t = e),
-                a.forEach((e) => {
-                    e(o, t)
-                }),
-                n()
+            tCount = e
+            changeListener.forEach((e) => {
+                e(verbose, tCount)
+            })
+            bindConsole()
         },
-        get: () => t,
+        get: () => tCount,
         get verbose() {
-            return (o.debug || (() => { })).bind(console)
+            return (verbose.debug || (() => { })).bind(console)
         },
         debug: () => { },
         log: () => { },
@@ -47,10 +48,10 @@
         info: () => { },
         error: () => { },
         addChangeListener: (e) => {
-            a.push(e)
+            changeListener.push(e)
         }
     }
-    n()
+    bindConsole()
     const {
         atob,
         btoa,
@@ -63,26 +64,24 @@
     const SCHEMA = "schema"
     const CONFIG = "config"
     const SESSION = "session"
-    const T = (() => {
+    const createVersionObject = (() => {
         const e = [VERSION]
-        const t = {}
-        return (
-            e.forEach((e) => {
-                t[e] = true
-            }),
-            {
-                keys: e,
-                has: function (e) {
-                    return !!t[e]
-                },
+        const t = e.reduce((obj, key) => {
+            obj[key] = true
+            return obj
+        }, {})
+        return {
+            keys: e,
+            has: function (key) {
+                return !!t[key]
             }
-        )
+        }
     })()
-    const U = async function (e, t) {
+    const execStorageMethod = async function (e, t) {
         const a = Storage[e][t]
         a && (await a())
     }
-    let q
+    let storageMethods
     const Storage = {
         chromeStorage: (() => {
             let isInited = false
@@ -113,7 +112,7 @@
                             void 0 !== t && (a[n] = t)
                         }
                         return a
-                    })(methods, T.keys)
+                    })(methods, createVersionObject.keys)
                         ; (tMap = e),
                             await new Promise((t) => {
                                 storage.local.clear(async () => {
@@ -154,12 +153,12 @@
                         },
                             l = (e) => {
                                 ++a <= 5
-                                    ? (o.warn(
+                                    ? (verbose.warn(
                                         "storage:",
                                         e || "storage set/get test failed!"
                                     ),
                                         setTimeout(u, a * a * 100))
-                                    : (o.warn(
+                                    : (verbose.warn(
                                         "storage: storage set/get test finally failed!"
                                     ),
                                         c())
@@ -171,16 +170,16 @@
                             ; (d = null), c()
                         }, 18e4)
                         const u = () => {
-                            o.log("Storage: test -> start")
+                            verbose.log("Storage: test -> start")
                             const t = Date.now()
                             storage.local.set(r, () => {
-                                o.log(
+                                verbose.log(
                                     "Storage: test -> set after " + (Date.now() - t) + "ms"
                                 ),
                                     storage.local.get(
                                         s,
                                         (a) => (
-                                            o.log(
+                                            verbose.log(
                                                 "Storage: test -> get after " +
                                                 (Date.now() - t) +
                                                 "ms"
@@ -199,7 +198,7 @@
                                                             "lastError is set"
                                                         )
                                                         : void storage.local.remove(s, () => {
-                                                            o.log(
+                                                            verbose.log(
                                                                 "Storage: test -> remove after " +
                                                                 (Date.now() - t) +
                                                                 "ms"
@@ -219,7 +218,7 @@
                     if (!isInited) {
                         isInited = true
                         const a = (e) => {
-                            ; (t = {}),
+                            ; (tMap = {}),
                                 e &&
                                 Object.keys(e).forEach((a) => {
                                     const n = e[a]
@@ -246,13 +245,13 @@
             }
         })(),
     }
-    const $ = async () =>
-        q
-            ? (q.isWorking || Promise.resolve)()
+    const isWorking = async () =>
+        storageMethods
+            ? (storageMethods.isWorking || Promise.resolve)()
             : new Promise((e, t) => {
                 setTimeout(async () => {
                     try {
-                        await $(), e()
+                        await isWorking(), e()
                     } catch (e) {
                         t()
                     }
@@ -260,37 +259,37 @@
             })
     const storageFactory = {
         secure: {},
-        setValue: (e, t) => q.setValue(e, t),
-        setValues: (e) => q.setValues(e),
-        getValue: (e, t) => q.getValue(e, t),
-        deleteAll: () => q.deleteAll(),
-        deleteValue: (e) => q.deleteValue(e),
-        listValues: () => q.listValues(),
-        isWorking: $,
+        setValue: (e, t) => storageMethods.setValue(e, t),
+        setValues: (e) => storageMethods.setValues(e),
+        getValue: (e, t) => storageMethods.getValue(e, t),
+        deleteAll: () => storageMethods.deleteAll(),
+        deleteValue: (e) => storageMethods.deleteValue(e),
+        listValues: () => storageMethods.listValues(),
+        isWorking,
         migrate: async (e, t, a) => {
             const n = Storage[e],
                 s = Storage[t],
                 r = a || {}
             if (!n || !s) {
                 const a = "Migration: unknown storage implementation(s) "
-                throw (o.error(a, e, t), a)
+                throw (verbose.error(a, e, t), a)
             }
-            await U(e, "init"),
-                await U(t, "init"),
-                await Promise.all(
-                    n.methods.listValues().map(async (e) => {
-                        const t = n.methods.getValue(e)
-                        r.drop && (await n.methods.deleteValue(e)),
-                            void 0 !== t && (await s.methods.setValue(e, t))
-                    })
-                ),
-                await U(t, "clean"),
-                await U(e, "clean")
+            await execStorageMethod(e, "init")
+            await execStorageMethod(t, "init")
+            await Promise.all(
+                n.methods.listValues().map(async (e) => {
+                    const t = n.methods.getValue(e)
+                    r.drop && (await n.methods.deleteValue(e)),
+                        void 0 !== t && (await s.methods.setValue(e, t))
+                })
+            )
+            await execStorageMethod(t, "clean")
+            await execStorageMethod(e, "clean")
         },
         init: async () => {
-            o.debug("Storage: use " + CHROME_STORAGE)
+            verbose.debug("Storage: use " + CHROME_STORAGE)
             const e = Storage[CHROME_STORAGE]
-            q = e.methods
+            storageMethods = e.methods
             e.init && (await e.init())
         },
         factoryReset: () => storageFactory.deleteAll(),
@@ -310,7 +309,7 @@
         "heiflgcdlcilkmbminjohdnmejohiblb",
     ]
     const K = []
-    const Y = {}
+    const portObj = {}
     const Z = {}
     const config = {
         configMode: 0,
@@ -318,33 +317,36 @@
         externalExtensionIds: [...externalExtensionIds],
     }
     const listenerObj = {}
-    const getValueFn = (e) => {
-        let t,
-            a = storageFactory.getValue(CONFIG, {})
+    const getConfig = (key) => {
+        let t
+        let storageData = storageFactory.getValue(CONFIG, {})
         return (
-            a instanceof Object || (a = {}),
-            void 0 !== (t = a[e]) ? t : "function" == typeof (t = config[e]) ? t() : t
+            storageData instanceof Object || (storageData = {}),
+            void 0 !== (t = storageData[key]) ? t : "function" == typeof (t = config[key]) ? t() : t
         )
     }
-    const ae = (e, t) => {
-        let a = storageFactory.getValue(CONFIG, {})
-        a instanceof Object || (a = {})
-        const n = getValueFn(e)
-        a[e] = t
-        const s = storageFactory.setValue(CONFIG, a),
-            r = Z[e]
-        return (
-            r &&
-            JSON.stringify(n) != JSON.stringify(t) &&
-            r.forEach((a) => {
+    const setConfig = (key, value) => {
+        let storageData = storageFactory.getValue(CONFIG, {});
+        if (typeof storageData !== 'object') {
+            storageData = {};
+        }
+        if (!(storageConfig instanceof Object)) {
+            storageData = {};
+        }
+        const oldValue = getConfig(key);
+        storageData[key] = value;
+        const saveResult = storageFactory.setValue(CONFIG, storageData);
+        const listeners = Z[key];
+        if (listeners && JSON.stringify(oldValue) !== JSON.stringify(value)) {
+            listeners.forEach(listener => {
                 try {
-                    a(e, n, t, s)
-                } catch (e) {
-                    o.warn("config: changeListener error", e)
+                    listener(key, oldValue, value, saveResult);
+                } catch (error) {
+                    verbose.warn('config: changeListener error', error);
                 }
-            }),
-            s
-        )
+            });
+        }
+        return saveResult;
     }
     let localStorageData = {}
     try {
@@ -352,7 +354,7 @@
         localStorageData = JSON.parse(atob(value))
     } catch (e) { }
     const getListener = (e) => localStorageData[e] || listenerObj[e]
-    const se = (e, t) => {
+    const setListener = (e, t) => {
         const listener = getListener(e)
         void 0 === t ? delete localStorageData[e] : (localStorageData[e] = t),
             localStorage &&
@@ -372,7 +374,7 @@
                 try {
                     n(e, listener, t)
                 } catch (e) {
-                    o.warn("config: changeListener error", e)
+                    verbose.warn("config: changeListener error", e)
                 }
             })
     }
@@ -391,10 +393,10 @@
             Object.keys(config).forEach((t) => {
                 Object.defineProperty(e, t, {
                     get: function () {
-                        return getValueFn(t)
+                        return getConfig(t)
                     },
                     set: function (e) {
-                        ae(t, e)
+                        setConfig(t, e)
                     },
                     enumerable: true,
                 })
@@ -405,7 +407,7 @@
                         return getListener(t)
                     },
                     set: function (e) {
-                        se(t, e)
+                        setListener(t, e)
                     },
                     enumerable: true,
                 })
@@ -413,9 +415,9 @@
             listenerFactory.values = e
             listenerFactory.initialized = true
         },
-        getValue: (e) => (listenerObj.hasOwnProperty(e) ? getListener(e) : getValueFn(e)),
+        getValue: (e) => (listenerObj.hasOwnProperty(e) ? getListener(e) : getConfig(e)),
         setValue: async (e, t) =>
-            listenerObj.hasOwnProperty(e) ? await se(e, t) : await ae(e, t),
+            listenerObj.hasOwnProperty(e) ? await setListener(e, t) : await setConfig(e, t),
         getDefaults: () => config,
         addChangeListener: (e, t) => {
             var a
@@ -434,7 +436,7 @@
             //     return
             // }
             scripting.executeScript({
-                files: ["content.js"],
+                files: ["forward.js"],
                 target: { tabId: a, frameIds: [0] },
                 injectImmediately: true,
                 world: "ISOLATED",
@@ -446,74 +448,107 @@
                 world: "MAIN",
             })
         })
-        const t = async (e, n) => {
-            if (a) return await a, t(e, n)
-            {
-                let t = () => null
-                a = new Promise((e) => (t = e))
-                a.then(() => (a = void 0))
-                const s = await (async (activeUrls) => {
-                    const list =
-                        K.length && K.includes(runtimeId) ? listenerFactory.values.externalExtensionIds : externalExtensionIds
-                    return (
-                        await Promise.all(
-                            list.map((key) => {
-                                if (void 0 === Y[key])
-                                    return (
-                                        (Y[key] = false),
-                                        new Promise((a) => {
-                                            try {
-                                                const n = runtime.connect(key)
-                                                const o = Math.random().toString(36).substr(2, 5)
-                                                n.postMessage({
-                                                    method: "userscripts",
-                                                    action: "options",
-                                                    messageId: o,
-                                                    activeUrls,
-                                                })
-                                                n.onMessage.addListener((e) => {
-                                                    runtime.lastError,
-                                                        e || (delete Y[key], n.disconnect()),
-                                                        e &&
-                                                        e.messageId === o &&
-                                                        e.allow &&
-                                                        e.allow.includes("list") &&
-                                                        (Y[key] = n),
-                                                        a()
-                                                })
-                                                n.onDisconnect.addListener(() => {
-                                                    runtime.lastError, delete Y[key], a()
-                                                })
-                                            } catch (e) {
-                                                o.debug(`unable to talk to ${key}`, e), a()
-                                            }
-                                        })
-                                    )
-                            })
-                        ),
-                        Object.keys(Y)
-                            .filter((e) => false !== Y[e])
-                            .map((e) => ({ id: e, port: Y[e] }))
-                    )
-                })([editorUrl])
-                if (!s.length) return n({ error: "no extension to talk to" }), void t()
-                const [{ id: r, port: i }] = s
-                o.log(`Found extension ${r}`)
-                const l = (e) => {
-                    n(e), i.onMessage.removeListener(l), t()
-                }
-                i.onMessage.addListener(l),
-                    i.postMessage({
-                        method: e.method,
-                        ...e.args,
-                    }),
-                    await a,
-                    (a = void 0)
+
+        const createMessageChannel = async (message, sendResponse) => {
+            if (setup) {
+                await setup
+                return createMessageChannel(message, sendResponse)
             }
+            let promiseFn = () => null
+            setup = new Promise((e) => (promiseFn = e))
+            setup.then(() => (setup = void 0))
+            const getExtensions = async (activeUrls) => {
+                const list = K.length && K.includes(runtimeId) ? listenerFactory.values.externalExtensionIds : externalExtensionIds
+                await Promise.all(
+                    list.map((key) => {
+                        if (portObj[key] === void 0) {
+                            portObj[key] = false
+                            return new Promise((resolve) => {
+                                try {
+                                    const port = runtime.connect(key)
+                                    const messageId = Math.random().toString(36).substr(2, 5)
+                                    port.postMessage({
+                                        method: "userscripts",
+                                        action: "options",
+                                        messageId,
+                                        activeUrls,
+                                    })
+                                    port.onMessage.addListener((e) => {
+                                        runtime.lastError,
+                                            e || (delete portObj[key], port.disconnect()),
+                                            e &&
+                                            e.messageId === messageId &&
+                                            e.allow &&
+                                            e.allow.includes("list") &&
+                                            (portObj[key] = port),
+                                            resolve()
+                                    })
+                                    port.onDisconnect.addListener(() => {
+                                        runtime.lastError, delete portObj[key], resolve()
+                                    })
+                                } catch (e) {
+                                    verbose.debug(`unable to talk to ${key}`, e), resolve()
+                                }
+                            })
+                        }
+                    })
+                )
+                return Object.keys(portObj)
+                    .filter((key) => portObj[key] !== false)
+                    .map((key) => ({ id: key, port: portObj[key] }))
+            }
+            const extensions = await getExtensions([editorUrl])
+            if (!extensions.length) return sendResponse({ error: "no extension to talk to" }), void promiseFn()
+            const [{ id, port }] = extensions
+            verbose.log(`Found extension ${id}`)
+            const listenerFn = (e) => {
+                sendResponse(e)
+                console.log('listenerFn', e)
+                port.onMessage.removeListener(listenerFn)
+                promiseFn()
+            }
+            port.onMessage.addListener(listenerFn)
+            port.postMessage({
+                method: message.method,
+                ...message.args,
+            })
+            await setup
+            setup = void 0
         }
-        runtime.onMessage.addListener((e, a, n) => (t(e, n), true))
+
+        const createAllMessage = async (message, sendResponse) => {
+            console.log('createAllMessage', message)
+            let mockData
+            const { method, args } = message
+            const { action } = args
+            if (action === 'list') {
+                mockData = {
+                    list: [
+                        {
+                            "namespace": "万象编辑器",
+                            "name": "script",
+                            "path": "6b954ad4-6aa1-445d-99b9-16bc42378f3c/source",
+                            "requires": []
+                        }
+                    ]
+                }
+            }
+            if (action === 'get') {
+                console.log('getgetget', tempText)
+                mockData = tempText
+            }
+            if (action === 'set') {
+                console.log('ssetetssetetssetet', args)
+                tempText = args
+            }
+            sendResponse(mockData)
+        }
+        runtime.onMessage.addListener((message, sender, sendResponse) => {
+            // createMessageChannel(message, sendResponse)
+            createAllMessage(message, sendResponse)
+            return true
+        })
         action.onClicked.addListener(() => {
-            console.log('action.onClicked')
             runtime.lastError,
                 tabs.query({ url: editorUrl + "*" }, (e) => {
                     e && e.length && e[0].id
@@ -521,13 +556,13 @@
                         : tabs.create({ url: editorUrl, active: true }, () => runtime.lastError)
                 })
         })
-        let a = (async () => {
+        let setup = (async () => {
             await storageFactory.init()
             await listenerFactory.init()
-            o.set(listenerFactory.values.logLevel)
+            verbose.set(listenerFactory.values.logLevel)
         })()
-        await a
-        a = void 0
-        o.log("Tampermonkey Editors initialization done")
+        await setup
+        setup = void 0
+        verbose.log("vscode-connector initialization done")
     })(self)
 })()

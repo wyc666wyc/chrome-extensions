@@ -47,4 +47,5 @@ port.onMessage.addListener((message) => {
 runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log(message, sender)
     sendResponse("收到")
+	return true
 })
