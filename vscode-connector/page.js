@@ -895,7 +895,7 @@
 		(async (self) => {
 			const Worker = self.Worker
 			let instance
-			const i_obj = (({ sendPrefix, listenPrefix, cloneInto: n }) => {
+			const i_obj = (({ sendPrefix, listenPrefix, cloneInto }) => {
 				let r,
 					i,
 					s,
@@ -924,14 +924,14 @@
 								MutationEvent.ADDITION
 							)
 						} else {
-							const detail = n ? n(option, window.document) : option
+							const detail = cloneInto ? cloneInto(option, window.document) : option
 							res = new CustomEvent(event, { detail })
 						}
 						return res
 					}
 					const targetEvent = eventHandler(eventName,
 						{
-							messageType,
+							m: messageType,
 							a: data,
 							r: result
 						}, o)
@@ -989,7 +989,7 @@
 							addEventListener(`${listenPrefix}_${i}`, u, true))
 				}
 				let p = () => { }
-				const m = {
+				const manage = {
 					init: async (init_p) => {
 						i ? f() : f(init_p),
 							await (function () {
@@ -1014,7 +1014,7 @@
 								? ((s = document.documentElement),
 									(p = () => {
 										s !== document.documentElement &&
-											(m.refresh(),
+											(manage.refresh(),
 												eventDispatch(`${sendPrefix}_${i}`, { messageType: "unlock", data: void 0, result: null }))
 									}))
 								: new Promise((e) => {
@@ -1033,16 +1033,16 @@
 									}
 								}).then(() => {
 									c = true
-									m.send("bridge.onpurge")
-									m.refresh()
+									manage.send("bridge.onpurge")
+									manage.refresh()
 								})
 					},
 					refresh: () => {
 						const e = i
-						e && (m.cleanup(), m.init(e))
+						e && (manage.cleanup(), manage.init(e))
 					},
 					switchId: (e) => {
-						i && m.cleanup(), f(e)
+						i && manage.cleanup(), f(e)
 					},
 					send: (messageType, data, r, s) => {
 						let o, a
@@ -1065,7 +1065,7 @@
 								(i = void 0))
 					},
 				}
-				return m
+				return manage
 			})({
 				sendPrefix: "2C",
 				listenPrefix: "2P",
@@ -1083,7 +1083,7 @@
 				return instance
 			}
 			/// 发送读取脚本消息通知, 获取所有脚本列表
-			const sendUserscripts = await ((e) =>
+			const getUserScripts = (e) =>
 				new Promise((reslove) => {
 					let n = 1
 					const r = () => {
@@ -1092,7 +1092,8 @@
 						})
 					}
 					r()
-				}))(i_obj)
+				})
+			const userscripts = await getUserScripts(i_obj)
 			const namespaceInstance = new NameSpace("unused", false)
 			!(async function (fff, list, handler) {
 				for (const {
@@ -1127,7 +1128,7 @@
 							c._entries[fileName] = new FileWriterImpl(fileName, file, true)
 						})
 				new FileSystemDirectoryHandle(fff)
-			})(namespaceInstance, sendUserscripts, {
+			})(namespaceInstance, userscripts, {
 				get: async (e, t, timeStamp) =>
 					await me(async () => {
 						const { value, lastModified } = await ((e, t, timeStamp) =>

@@ -3,10 +3,10 @@
 		"use strict"
 		const e = !window.content_world
 		const { createEvent: n } = document
-		const { runtime: t } = chrome
+		const { runtime } = chrome
 			; (async () => {
 				const o = (({ sendPrefix: t, listenPrefix: o, cloneInto: s }) => {
-					let i,
+					let listener,
 						r,
 						d,
 						c = 1
@@ -66,13 +66,13 @@
 									let t
 									e && (t = a[e]) && (t(n), delete a[e])
 								})(o, s)
-						} else if (i) {
+						} else if (listener) {
 							const d = o
 								? (e) => {
 									w(`${t}_${r}`, { m: "message.response", a: e, r: o })
 								}
 								: () => { }
-							i(
+							listener(
 								{
 									method: n,
 									args: s,
@@ -153,8 +153,8 @@
 						sendToId: (e, n, o) => {
 							w(`${t}_${e}`, { m: n, a: o, r: null })
 						},
-						setMessageListener: (e) => {
-							i = e
+						setMessageListener: (listenerFn) => {
+							listener = listenerFn
 						},
 						cleanup: () => {
 							r &&
@@ -167,7 +167,7 @@
 				})({ sendPrefix: "2P", listenPrefix: "2C" })
 				o.init("bfaqq")
 				o.setMessageListener((e, n) => {
-					t.sendMessage({ ...e, method: "userscripts" }, (e) => {
+					runtime.sendMessage({ ...e, method: "userscripts" }, (e) => {
 						console.log('sendMessage', e, n)
 						n(e)
 					})

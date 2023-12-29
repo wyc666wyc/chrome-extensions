@@ -58,17 +58,17 @@
         setTimeout,
         localStorage
     } = self
-    const C = "chromeStorage"
-    const D = "version"
-    const x = "schema"
-    const J = "config"
-    const W = "session"
+    const CHROME_STORAGE = "chromeStorage"
+    const VERSION = "version"
+    const SCHEMA = "schema"
+    const CONFIG = "config"
+    const SESSION = "session"
     const T = (() => {
-        const e = [D]
+        const e = [VERSION]
         const t = {}
         return (
             e.forEach((e) => {
-                t[e] = !0
+                t[e] = true
             }),
             {
                 keys: e,
@@ -79,36 +79,32 @@
         )
     })()
     const U = async function (e, t) {
-        const a = F[e][t]
+        const a = Storage[e][t]
         a && (await a())
     }
     let q
-    const F = {
+    const Storage = {
         chromeStorage: (() => {
-            let e = !1,
-                t = {}
-            const a = "normal"
-            const n = {
-                setValue: async (e, n) => {
-                    const o = e
-                    t[o] = n
-                    const s = {}
-                        ; (s[o] = { origin: a, value: n }),
-                            await new Promise((e) => storage.local.set(s, () => e()))
+            let isInited = false
+            let tMap = {}
+            const origin = "normal"
+            const methods = {
+                setValue: async (key, value) => {
+                    tMap[key] = value
+                    const target = {}
+                    target[key] = { origin, value }
+                    await new Promise((e) => storage.local.set(target, () => e()))
                 },
-                setValues: async (e) => {
-                    const n = {}
-                    Object.keys(e).forEach((o) => {
-                        const s = o,
-                            r = e[o]
-                            ; (t[s] = r), (n[s] = { origin: a, value: r })
-                    }),
-                        await new Promise((e) => storage.local.set(n, () => e()))
+                setValues: async (obj) => {
+                    const target = {}
+                    Object.keys(obj).forEach((key) => {
+                        const value = obj[key]
+                        tMap[key] = value
+                        target[key] = { origin, value }
+                    })
+                    await new Promise((e) => storage.local.set(target, () => e()))
                 },
-                getValue: (e, a) => {
-                    const n = e
-                    return void 0 === t[n] ? a : t[n]
-                },
+                getValue: (key, value) => tMap[key] || value,
                 deleteAll: async () => {
                     const e = ((e, t) => {
                         const a = {}
@@ -117,8 +113,8 @@
                             void 0 !== t && (a[n] = t)
                         }
                         return a
-                    })(n, T.keys)
-                        ; (t = e),
+                    })(methods, T.keys)
+                        ; (tMap = e),
                             await new Promise((t) => {
                                 storage.local.clear(async () => {
                                     await (async (e, t) => {
@@ -127,20 +123,20 @@
                                                 void 0 !== t[a] && (await e.setValue(a, t[a]))
                                             })
                                         )
-                                    })(n, e),
+                                    })(methods, e),
                                         t()
                                 })
                             })
                 },
                 deleteValue: async (e) => {
                     const a = e
-                    delete t[a],
+                    delete tMap[a],
                         await new Promise((e) => storage.local.remove(a, () => e()))
                 },
                 listValues: () => {
                     const e = []
                     return (
-                        Object.getOwnPropertyNames(t).forEach((t) => {
+                        Object.getOwnPropertyNames(tMap).forEach((t) => {
                             e.push(t)
                         }),
                         e
@@ -220,8 +216,8 @@
             }
             return {
                 init: async () => {
-                    if (!e) {
-                        e = !0
+                    if (!isInited) {
+                        isInited = true
                         const a = (e) => {
                             ; (t = {}),
                                 e &&
@@ -230,8 +226,8 @@
                                     n &&
                                         n.hasOwnProperty("origin") &&
                                         n.hasOwnProperty("value")
-                                        ? (t[a] = n.value)
-                                        : (t[a] = n)
+                                        ? (tMap[a] = n.value)
+                                        : (tMap[a] = n)
                                 })
                         }
                         await new Promise((e) =>
@@ -242,10 +238,11 @@
                     }
                 },
                 clean: async () => {
-                    ; (e = !1), (t = {})
+                    isInited = false
+                    tMap = {}
                 },
                 options: {},
-                methods: n,
+                methods,
             }
         })(),
     }
@@ -271,8 +268,8 @@
         listValues: () => q.listValues(),
         isWorking: $,
         migrate: async (e, t, a) => {
-            const n = F[e],
-                s = F[t],
+            const n = Storage[e],
+                s = Storage[t],
                 r = a || {}
             if (!n || !s) {
                 const a = "Migration: unknown storage implementation(s) "
@@ -291,17 +288,18 @@
                 await U(e, "clean")
         },
         init: async () => {
-            o.debug("Storage: use " + C)
-            const e = F[C]
-                ; (q = e.methods), e.init && (await e.init())
+            o.debug("Storage: use " + CHROME_STORAGE)
+            const e = Storage[CHROME_STORAGE]
+            q = e.methods
+            e.init && (await e.init())
         },
         factoryReset: () => storageFactory.deleteAll(),
-        isWiped: async () => !1,
+        isWiped: async () => false,
         setVersion: async (e, t) => {
-            await storageFactory.setValue(D, e), t && (await storageFactory.setValue(x, t))
+            await storageFactory.setValue(VERSION, e), t && (await storageFactory.setValue(SCHEMA, t))
         },
-        getVersion: async (e) => (await storageFactory.getValue(D)) || e,
-        getSchemaVersion: () => storageFactory.getValue(x, "1.0"),
+        getVersion: async (e) => (await storageFactory.getValue(VERSION)) || e,
+        getSchemaVersion: () => storageFactory.getValue(SCHEMA, "1.0"),
     }
     const runtimeId = chrome.runtime.id.substr(0, 4)
     const externalExtensionIds = [
@@ -319,21 +317,21 @@
         logLevel: "hohm" === runtimeId ? 100 : 0,
         externalExtensionIds: [...externalExtensionIds],
     }
-    const ee = {}
+    const listenerObj = {}
     const getValueFn = (e) => {
         let t,
-            a = storageFactory.getValue(J, {})
+            a = storageFactory.getValue(CONFIG, {})
         return (
             a instanceof Object || (a = {}),
             void 0 !== (t = a[e]) ? t : "function" == typeof (t = config[e]) ? t() : t
         )
     }
     const ae = (e, t) => {
-        let a = storageFactory.getValue(J, {})
+        let a = storageFactory.getValue(CONFIG, {})
         a instanceof Object || (a = {})
         const n = getValueFn(e)
         a[e] = t
-        const s = storageFactory.setValue(J, a),
+        const s = storageFactory.setValue(CONFIG, a),
             r = Z[e]
         return (
             r &&
@@ -348,82 +346,76 @@
             s
         )
     }
-    let ne = {}
-        ; (() => {
-            let e
-            if (localStorage && (e = localStorage.getItem(W)))
-                try {
-                    ne = JSON.parse(atob(e))
-                } catch (e) { }
-        })()
-    const oe = (e) => {
-        let t
-        return void 0 !== (t = ne[e]) ? t : ee[e]
-    }
+    let localStorageData = {}
+    try {
+        const value = localStorage.getItem(SESSION)
+        localStorageData = JSON.parse(atob(value))
+    } catch (e) { }
+    const getListener = (e) => localStorageData[e] || listenerObj[e]
     const se = (e, t) => {
-        const a = oe(e)
-        void 0 === t ? delete ne[e] : (ne[e] = t),
+        const listener = getListener(e)
+        void 0 === t ? delete localStorageData[e] : (localStorageData[e] = t),
             localStorage &&
             localStorage.setItem(
-                W,
+                SESSION,
                 ((e) => {
                     let t = ""
                     for (let a = 0;a < e.length;a++)
                         t += String.fromCharCode(255 & e.charCodeAt(a))
                     return btoa(t)
-                })(JSON.stringify(ne))
+                })(JSON.stringify(localStorageData))
             )
         const n = Z[e]
         n &&
-            JSON.stringify(a) != JSON.stringify(t) &&
+            JSON.stringify(listener) != JSON.stringify(t) &&
             n.forEach((n) => {
                 try {
-                    n(e, a, t)
+                    n(e, listener, t)
                 } catch (e) {
                     o.warn("config: changeListener error", e)
                 }
             })
     }
-    const re = {
-        initialized: !1,
+    const listenerFactory = {
+        initialized: false,
         values: {},
         snapshot: {},
         init: async () => {
             const e = {}
-            Object.defineProperty(re, "snapshot", {
+            Object.defineProperty(listenerFactory, "snapshot", {
                 get: function () {
-                    return { ...re.values }
+                    return { ...listenerFactory.values }
                 },
-                enumerable: !0,
-            }),
-                Object.keys(config).forEach((t) => {
-                    Object.defineProperty(e, t, {
-                        get: function () {
-                            return getValueFn(t)
-                        },
-                        set: function (e) {
-                            ae(t, e)
-                        },
-                        enumerable: !0,
-                    })
-                }),
-                Object.keys(ee).forEach((t) => {
-                    Object.defineProperty(e, t, {
-                        get: function () {
-                            return oe(t)
-                        },
-                        set: function (e) {
-                            se(t, e)
-                        },
-                        enumerable: !0,
-                    })
-                }),
-                (re.values = e),
-                (re.initialized = !0)
+                enumerable: true,
+            })
+            Object.keys(config).forEach((t) => {
+                Object.defineProperty(e, t, {
+                    get: function () {
+                        return getValueFn(t)
+                    },
+                    set: function (e) {
+                        ae(t, e)
+                    },
+                    enumerable: true,
+                })
+            })
+            Object.keys(listenerObj).forEach((t) => {
+                Object.defineProperty(e, t, {
+                    get: function () {
+                        return getListener(t)
+                    },
+                    set: function (e) {
+                        se(t, e)
+                    },
+                    enumerable: true,
+                })
+            })
+            listenerFactory.values = e
+            listenerFactory.initialized = true
         },
-        getValue: (e) => (ee.hasOwnProperty(e) ? oe(e) : getValueFn(e)),
+        getValue: (e) => (listenerObj.hasOwnProperty(e) ? getListener(e) : getValueFn(e)),
         setValue: async (e, t) =>
-            ee.hasOwnProperty(e) ? await se(e, t) : await ae(e, t),
+            listenerObj.hasOwnProperty(e) ? await se(e, t) : await ae(e, t),
         getDefaults: () => config,
         addChangeListener: (e, t) => {
             var a
@@ -444,13 +436,13 @@
             scripting.executeScript({
                 files: ["content.js"],
                 target: { tabId: a, frameIds: [0] },
-                injectImmediately: !0,
+                injectImmediately: true,
                 world: "ISOLATED",
             })
             scripting.executeScript({
                 files: ["page.js"],
                 target: { tabId: a, frameIds: [0] },
-                injectImmediately: !0,
+                injectImmediately: true,
                 world: "MAIN",
             })
         })
@@ -462,13 +454,13 @@
                 a.then(() => (a = void 0))
                 const s = await (async (activeUrls) => {
                     const list =
-                        K.length && K.includes(runtimeId) ? re.values.externalExtensionIds : externalExtensionIds
+                        K.length && K.includes(runtimeId) ? listenerFactory.values.externalExtensionIds : externalExtensionIds
                     return (
                         await Promise.all(
                             list.map((key) => {
                                 if (void 0 === Y[key])
                                     return (
-                                        (Y[key] = !1),
+                                        (Y[key] = false),
                                         new Promise((a) => {
                                             try {
                                                 const n = runtime.connect(key)
@@ -500,7 +492,7 @@
                             })
                         ),
                         Object.keys(Y)
-                            .filter((e) => !1 !== Y[e])
+                            .filter((e) => false !== Y[e])
                             .map((e) => ({ id: e, port: Y[e] }))
                     )
                 })([editorUrl])
@@ -519,20 +511,20 @@
                     (a = void 0)
             }
         }
-        runtime.onMessage.addListener((e, a, n) => (t(e, n), !0))
+        runtime.onMessage.addListener((e, a, n) => (t(e, n), true))
         action.onClicked.addListener(() => {
             console.log('action.onClicked')
             runtime.lastError,
                 tabs.query({ url: editorUrl + "*" }, (e) => {
                     e && e.length && e[0].id
-                        ? tabs.update(e[0].id, { active: !0 }, () => runtime.lastError)
-                        : tabs.create({ url: editorUrl, active: !0 }, () => runtime.lastError)
+                        ? tabs.update(e[0].id, { active: true }, () => runtime.lastError)
+                        : tabs.create({ url: editorUrl, active: true }, () => runtime.lastError)
                 })
         })
         let a = (async () => {
             await storageFactory.init()
-            await re.init()
-            o.set(re.values.logLevel)
+            await listenerFactory.init()
+            o.set(listenerFactory.values.logLevel)
         })()
         await a
         a = void 0
