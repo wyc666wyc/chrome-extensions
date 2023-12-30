@@ -436,7 +436,7 @@
             //     return
             // }
             scripting.executeScript({
-                files: ["forward.js"],
+                files: ["birdge.js"],
                 target: { tabId: a, frameIds: [0] },
                 injectImmediately: true,
                 world: "ISOLATED",
@@ -534,11 +534,12 @@
                 }
             }
             if (action === 'get') {
-                console.log('getgetget', tempText)
-                mockData = tempText
+                mockData = tempText || {
+                    value: 'const a = 1',
+                    lastModified: Date.now()
+                }
             }
             if (action === 'set') {
-                console.log('ssetetssetetssetet', args)
                 tempText = args
             }
             sendResponse(mockData)

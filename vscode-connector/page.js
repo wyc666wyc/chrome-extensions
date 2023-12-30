@@ -230,6 +230,7 @@
 					(this.position = 0)
 			}
 			async write(e) {
+				console.log('write', e)
 				if (!this.fileHandle.file) throw new DOMException(...GONE)
 				let t = this.file
 				if (((e) => "object" == typeof e && void 0 !== e.type)(e))
@@ -891,7 +892,7 @@
 			}
 			return t()
 		};
-		(async (self) => {
+		const startWork = async (self) => {
 			const Worker = self.Worker
 			let instance
 			const channel = (({ sendPrefix, listenPrefix, cloneInto }) => {
@@ -1193,16 +1194,15 @@
 			self.FileSystemFileHandle = FileSystemFileHandle
 			self.Worker = new Proxy(Worker, {
 				construct: (e, [t, r]) => {
-					console.log('Worker', e, t, r)
 					const workerInstance = new Worker(t, r)
 					let s
 					return new Proxy(workerInstance, {
 						get: (target, type) =>
 							type === "postMessage"
 								? (param) => {
+									console.log('postMessage', param)
 									const { method } = param
 									if ("listDirectory" !== method && "searchDirectory" !== method) {
-										console.log('searchDirectory', param)
 										workerInstance.postMessage(param)
 									}
 									else {
@@ -1259,23 +1259,34 @@
 					}
 				}, 500)
 			})
-			processor(() => {
-				let dom
-				const e = setInterval(() => {
-					dom = document.querySelector('iframe[id^="mc-monaco-editor"]')
-					if (dom) {
-						const monaco = dom.contentWindow.alleMonacoEditor
-						const content = monaco.getValue()
-						channel.send('userscripts', {
-							action: "set",
-							value: content,
-							lastModified: Date.now(),
-						})
-						clearInterval(e)
-					}
-				}, 500)
-			})
 			console.log("vscode-connector FileSystem registration finished")
-		})(window)
+		}
+
+		let targetWindow
+		const monacoSensor = setInterval(() => {
+			if (window._VSCODE_WEB_BOOTSTRAP_) { // vscode 编辑器环境
+				targetWindow = window
+			} else if (window.MonacoEnvironment) { // monaco 编辑器环境
+				targetWindow = window
+			}
+			const dom = document.querySelector('iframe[id^="mc-monaco-editor"]')
+			if (dom) { // monaco 编辑器环境在iframe中
+				targetWindow = dom.contentWindow
+			}
+			if (targetWindow) {
+				startWork(targetWindow)
+				clearInterval(monacoSensor)
+			}
+			// if (monaco) {
+			// 	const content = monaco.getValue()
+			// 	channel.send('userscripts', {
+			// 		action: "set",
+			// 		value: content,
+			// 		lastModified: Date.now(),
+			// 	})
+			// 	clearInterval(timer)
+			// }
+		}, 500)
+
 	})()
 })()
