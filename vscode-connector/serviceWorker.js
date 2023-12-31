@@ -427,6 +427,13 @@
                 })
         },
     }
+    const wait = (delay = 1000) => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve()
+            }, delay)
+        })
+    }
     const editorUrl = "https://vscode.dev/?connectTo=";
     (async (e) => {
         (e.oninstall = () => e.skipWaiting())
@@ -441,12 +448,21 @@
                 injectImmediately: true,
                 world: "ISOLATED",
             })
-            scripting.executeScript({
-                files: ["page.js"],
-                target: { tabId: a, frameIds: [0] },
-                injectImmediately: true,
-                world: "MAIN",
-            })
+            if (url.indexOf('vscode.dev') > -1) {
+                scripting.executeScript({
+                    files: ["page.js"],
+                    target: { tabId: a, frameIds: [0] },
+                    injectImmediately: true,
+                    world: "MAIN",
+                })
+            } else {
+                scripting.executeScript({
+                    files: ["page2.js"],
+                    target: { tabId: a, frameIds: [0] },
+                    injectImmediately: true,
+                    world: "MAIN",
+                })
+            }
         })
 
         const createMessageChannel = async (message, sendResponse) => {
@@ -503,7 +519,6 @@
             verbose.log(`Found extension ${id}`)
             const listenerFn = (e) => {
                 sendResponse(e)
-                console.log('listenerFn', e)
                 port.onMessage.removeListener(listenerFn)
                 promiseFn()
             }
@@ -516,13 +531,12 @@
             setup = void 0
         }
 
-        const createAllMessage = async (message, sendResponse) => {
-            console.log('createAllMessage', message)
-            let mockData
+        const createAlleMessageChannel = async (message, sendResponse) => {
+            let result
             const { method, args } = message
             const { action } = args
             if (action === 'list') {
-                mockData = {
+                result = {
                     list: [
                         {
                             "namespace": "万象编辑器",
@@ -534,19 +548,37 @@
                 }
             }
             if (action === 'get') {
-                mockData = tempText || {
-                    value: 'const a = 1',
-                    lastModified: Date.now()
+                const getTargetTab = (condition) => {
+                    return new Promise((resolve) => {
+                        tabs.query({}, (tabList) => {
+                            const t = tabList.find(condition)
+                            resolve(t)
+                        })
+                    })
                 }
+                const targetTab = await getTargetTab((tab) => tab.url.indexOf('tcwireless.t.17usoft') > -1)
+                let response = await tabs.sendMessage(targetTab.id, {
+                    messageType: 'userscripts',
+                    args: {
+                        method: 'get'
+                    }
+                })
+                if (!response) {
+                    await wait(200)
+                    response = await tabs.sendMessage(targetTab.id, {
+                        messageType: 'userscripts',
+                        args: {
+                            method: 'get'
+                        }
+                    })
+                }
+                result = response
             }
-            if (action === 'set') {
-                tempText = args
-            }
-            sendResponse(mockData)
+            sendResponse(result)
         }
         runtime.onMessage.addListener((message, sender, sendResponse) => {
             // createMessageChannel(message, sendResponse)
-            createAllMessage(message, sendResponse)
+            createAlleMessageChannel(message, sendResponse)
             return true
         })
         action.onClicked.addListener(() => {

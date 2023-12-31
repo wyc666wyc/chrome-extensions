@@ -8,7 +8,7 @@
       "default_title": "vscode-connector"
    },
    "background": {
-      "service_worker": "background.js"
+      "service_worker": "serviceWorker.js"
    },
    "default_locale": "en",
    "description": "connect vscode & other editor",

@@ -5,7 +5,7 @@
 		const { createEvent } = document
 		const { runtime } = chrome
 			; (async () => {
-				const o = (({ sendPrefix: t, listenPrefix: o, cloneInto: s }) => {
+				const channel = (({ sendPrefix: t, listenPrefix: o, cloneInto: s }) => {
 					let listener,
 						r,
 						d,
@@ -165,12 +165,41 @@
 					}
 					return E
 				})({ sendPrefix: "2P", listenPrefix: "2C" })
-				o.init("bfaqq")
-				o.setMessageListener((e, n) => {
+				channel.init("bfaqq")
+				channel.setMessageListener((e, n) => {
 					runtime.sendMessage({ ...e, method: "userscripts" }, (e) => {
-						console.log('sendMessage', e, n)
 						n(e)
 					})
+				})
+				let temp
+				let promiseStatus
+				runtime.onMessage.addListener((message, sender, sendResponse) => {
+					const { messageType, args } = message
+					if (args.method === 'get') {
+						if (temp) {
+							sendResponse(temp)
+							temp = null
+							return
+						}
+						window.postMessage({
+							...args,
+						}, '*')
+					}
+					const promise = new Promise((resolve) => {
+						promiseStatus = resolve
+					})
+					promise.then(res => {
+						temp = res
+					})
+				})
+				window.addEventListener('message', ({ data }) => {
+					const { method, value, lastModified } = data
+					if (method === 'getValue') {
+						promiseStatus && promiseStatus({
+							value,
+							lastModified
+						})
+					}
 				})
 			})(window)
 	})()
